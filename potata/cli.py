@@ -60,20 +60,22 @@ class CliPathAddOption(CliOption):
             return
         _id = str(len(self.context.server.path_map) + 1)
         self.context.server.path_map[_id] = real_path
+        print(f'New path added: {_id}: {real_path}\n')
 
 
 class CliLsOption(CliOption):
     def __init__(self, context):
-        super().__init__(context, 'ls', 'List files in serving directory')
+        super().__init__(context, 'ls', 'List files in serving directories')
 
     def __call__(self):
-        print(f'\n{self.simplify_path(self.context.serve_dir)}:\n')
-        for f in os.listdir(self.context.serve_dir):
-            if os.path.isdir(os.path.join(self.context.serve_dir, f)):
-                print(f'• {f}/')
-            else:
-                print(f'• {f}')
-        print('\n')
+        for dir_key, dir_val in self.context.server.path_map.items():
+            print(f'\n{dir_key} ({dir_val}):\n')
+            for f in os.listdir(dir_val):
+                if os.path.isdir(os.path.join(dir_val, f)):
+                    print(f'• {f}/')
+                else:
+                    print(f'• {f}')
+            print('')
 
 
 class CliIpOption(CliOption):
@@ -121,7 +123,7 @@ class CliUsageOption(CliOption):
 
     def print_curl(self):
         curr_folder = list(self.context.server.path_map.keys())[0]
-        url = f'http://{self.context.ip}:{self.context.port}/{curr_folder}/'
+        url = f'http://{self.context.ip}:{self.context.port}/{curr_folder}'
 
         curl_usage = f'{italic("cURL command GET:")}\n' \
                      f'    $ curl {url}/\n\n' \
@@ -178,5 +180,5 @@ class CLI:
     def run_command(self, cmd: str, *args: List[str], **kwargs) -> None:
         try:
             self.context.commands[cmd](*args, **kwargs)
-        except KeyError:
+        except (KeyError, TypeError):
             pass
